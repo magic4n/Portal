@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal — Mirror everything.</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #050505;
+            --glass-bg: rgba(20, 20, 22, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: #f4f4f5;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            selection-background-color: #ffffff;
+            selection-color: #000000;
+        }
+
+        ::selection {
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+        }
+
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            background: 
+                radial-gradient(circle at 50% -10%, rgba(255, 255, 255, 0.09), transparent 55%),
+                radial-gradient(circle at 85% 30%, rgba(160, 160, 170, 0.04), transparent 45%),
+                radial-gradient(circle at 15% 80%, rgba(120, 120, 130, 0.05), transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            mask-image: radial-gradient(circle at 50% 40%, black 30%, transparent 85%);
+            -webkit-mask-image: radial-gradient(circle at 50% 40%, black 30%, transparent 85%);
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .mirror-card {
+            position: relative;
+            background: rgba(18, 18, 20, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+        }
+
+        .mirror-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                var(--brand-glow, rgba(255, 255, 255, 0.08)),
+                transparent 45%
+            );
+            opacity: 0;
+            transition: opacity 0.35s ease;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .mirror-card:hover::before {
+            opacity: 1;
+        }
+
+        .mirror-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--brand-border, rgba(255, 255, 255, 0.28));
+            box-shadow: 0 12px 32px -8px var(--brand-shadow, rgba(0, 0, 0, 0.7)), 
+                        0 0 20px -5px var(--brand-glow, transparent);
+            background: rgba(26, 26, 30, 0.75);
+        }
+
+        .mirror-card .service-icon-wrap {
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #a1a1aa;
+        }
+
+        .mirror-card:hover .service-icon-wrap {
+            color: var(--brand-color, #ffffff);
+            border-color: var(--brand-border, rgba(255, 255, 255, 0.3));
+            background: var(--brand-bg-subtle, rgba(255, 255, 255, 0.06));
+            box-shadow: 0 0 18px var(--brand-glow, rgba(255, 255, 255, 0.12));
+            transform: scale(1.04);
+        }
+
+        .action-icon-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            color: #a1a1aa;
+            transition: all 0.2s ease;
+        }
+
+        .action-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .action-icon-btn:active {
+            transform: translateY(0px) scale(0.96);
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-up {
+            animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .custom-tooltip {
+            position: relative;
+        }
+
+        .custom-tooltip .tooltip-box {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: #141417;
+            color: #e4e4e7;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            white-space: nowrap;
+            max-width: 260px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+            transition: all 0.2s ease;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .custom-tooltip:hover .tooltip-box {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050505;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+    </style>
+</head>
+<body class="flex flex-col justify-between min-h-screen selection:bg-white selection:text-black">
+
+    <div class="ambient-bg"></div>
+    <div class="grid-overlay"></div>
+    <canvas id="starfieldCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-60"></canvas>
+
+    <!-- Main Content Wrapper -->
+    <main class="relative z-10 w-full max-w-2xl mx-auto px-4 sm:px-6 pt-12 pb-16 flex-grow flex flex-col justify-center">
+        
+        <!-- Top Brand Pill -->
+        <div class="flex justify-center mb-6 animate-fade-up" style="animation-delay: 0.05s;">
+            <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full glass-panel text-xs font-mono-code tracking-wider uppercase text-zinc-400">
+                <span class="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_#fff]"></span>
+                <span>lunaPortal</span>
+                <span class="text-zinc-600">•</span>
+                <span class="text-zinc-300">Mirror everything.</span>
+            </div>
+        </div>
+
+        <!-- Project Header & Metadata Section -->
+        <header id="projectHeader" class="text-center mb-8 animate-fade-up" style="animation-delay: 0.1s;">
+            <h1 id="projectTitleDisplay" class="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-3 bg-clip-text text-transparent bg-gradient-to-b from-white via-zinc-100 to-zinc-400">
+                Portal
+            </h1>
+            
+            <p id="projectDescriptionDisplay" class="text-sm sm:text-base text-zinc-400 max-w-xl mx-auto leading-relaxed mb-5 hidden"></p>
+
+            <!-- Dynamic Metadata Badges (Version, Release Date, File Size, Maintainer) -->
+            <div id="metadataContainer" class="flex flex-wrap items-center justify-center gap-2 mt-4 empty:hidden"></div>
+        </header>
+
+        <!-- Checksums Block (Hidden if both MD5 and SHA256 are "None") -->
+        <section id="checksumSection" class="mb-7 hidden animate-fade-up" style="animation-delay: 0.15s;">
+            <div class="glass-panel rounded-2xl p-4 sm:p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2 text-xs font-mono-code uppercase tracking-wider text-zinc-400">
+                        <svg class="w-4 h-4 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                        </svg>
+                        <span>File Integrity Checksums</span>
+                    </div>
+                    <span class="text-[11px] text-zinc-500">Click hash to copy</span>
+                </div>
+                <div id="checksumList" class="space-y-2.5"></div>
+            </div>
+        </section>
+
+        <!-- Mirrors List Header -->
+        <div id="mirrorsHeaderBar" class="flex items-center justify-between px-1 mb-3.5 text-xs font-mono-code text-zinc-400 uppercase tracking-wider hidden animate-fade-up" style="animation-delay: 0.18s;">
+            <span>Available Mirrors</span>
+            <span id="activeMirrorsCount" class="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-zinc-300">0 active</span>
+        </div>
+
+        <!-- Vertical List of Mirror Cards -->
+        <section id="mirrorsListContainer" class="flex flex-col gap-3 w-full"></section>
+
+        <!-- Empty / Configuration Error State (Shown if ProjectName is missing or ALL mirrors are "None") -->
+        <section id="errorEmptyState" class="hidden animate-fade-up">
+            <div class="glass-panel rounded-2xl p-7 sm:p-9 text-center border border-white/15 relative overflow-hidden">
+                <div class="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-5 text-zinc-200 shadow-inner">
+                    <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-semibold text-white mb-2">Configuration Incomplete</h2>
+                <p id="errorStateMessage" class="text-sm text-zinc-400 max-w-md mx-auto leading-relaxed mb-6">
+                    Required fields are not filled yet. Please open <code class="text-zinc-200 font-mono-code bg-white/10 px-1.5 py-0.5 rounded">index.html</code> in a text editor, set a valid <code class="text-zinc-200 font-mono-code bg-white/10 px-1.5 py-0.5 rounded">ProjectName</code>, and replace <code class="text-zinc-200 font-mono-code bg-white/10 px-1.5 py-0.5 rounded">"None"</code> with at least one mirror link.
+                </p>
+                <div class="text-left bg-black/60 border border-white/10 rounded-xl p-4 font-mono-code text-xs text-zinc-300 overflow-x-auto">
+                    <div class="text-zinc-500 mb-1">// Example inside index.html configuration:</div>
+                    <div><span class="text-zinc-400">const</span> ProjectName = <span class="text-white">"My Custom ROM v2.4"</span>;</div>
+                    <div><span class="text-zinc-400">const</span> SourceForge = <span class="text-white">"https://sourceforge.net/projects/..."</span>;</div>
+                    <div><span class="text-zinc-400">const</span> GoogleDrive_1 = <span class="text-white">"https://drive.google.com/..."</span>;</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer (Strictly only the required GitHub link) -->
+    <footer class="relative z-10 w-full py-6 px-4 border-t border-white/5 bg-black/30 backdrop-blur-md">
+        <div class="max-w-2xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-500">
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-zinc-500"></span>
+                <span class="font-mono-code tracking-tight text-zinc-400">Mirror everything.</span>
+            </div>
+            <div>
+                mirrored by <a href="https://github.com/magic4n/Portal" target="_blank" rel="noopener noreferrer" class="text-zinc-200 font-medium hover:text-white underline decoration-white/30 hover:decoration-white underline-offset-4 transition-all">Portal</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/80 backdrop-blur-md opacity-0 transition-opacity duration-200">
+        <div class="glass-panel rounded-2xl max-w-sm w-full p-6 text-center relative border border-white/15 transform scale-95 transition-transform duration-200" id="qrModalCard">
+            <button id="closeQrModalBtn" type="button" class="absolute top-4 right-4 w-8 h-8 rounded-lg action-icon-btn flex items-center justify-center" aria-label="Close modal">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <div class="text-xs font-mono-code uppercase tracking-wider text-zinc-400 mb-1">Scan to Download</div>
+            <h3 id="qrModalTitle" class="text-lg font-semibold text-white mb-4">Service Mirror</h3>
+            <div class="bg-white p-4 rounded-xl inline-block mx-auto mb-4 shadow-[0_0_30px_rgba(255,255,255,0.15)]">
+                <div id="qrCanvasContainer" class="w-48 h-48 flex items-center justify-center"></div>
+            </div>
+            <p id="qrModalUrl" class="text-xs font-mono-code text-zinc-400 break-all bg-black/50 border border-white/10 rounded-lg p-2.5 mb-4 max-h-20 overflow-y-auto"></p>
+            <button id="qrModalCopyBtn" type="button" class="w-full py-2.5 px-4 rounded-xl bg-white text-black font-medium text-xs hover:bg-zinc-200 transition-colors">
+                Copy Mirror Link
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 z-50 pointer-events-none transform translate-y-12 opacity-0 transition-all duration-300">
+        <div class="glass-panel px-4 py-3 rounded-xl border border-white/20 flex items-center gap-2.5 shadow-2xl">
+            <span class="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_#fff]"></span>
+            <span id="toastMessage" class="text-xs font-medium text-white">Copied to clipboard</span>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // REPLACE YOUR PROJECT INFORMATION BELOW
+        // Put "None" (or leave empty "") for any field you want to hide from the page.
+        // ============================================================================
+
+        // Replace "Portal" with your project or file name (Changes browser tab title & main heading)
+        const ProjectName = "DerpFest 16.2 - charoite";
+
+        // Replace "None" with a short description of your release or file
+        const Description = "Cool AOSP for charoite";
+
+        // Replace "None" with your release version (e.g., "v2.4.0-stable")
+        const Version = "v16.2-1";
+
+        // Replace "None" with the release date (e.g., "2025-05-15")
+        const ReleaseDate = "2026-10-17";
+
+        // Replace "None" with the file size (e.g., "2.48 GB")
+        const FileSize = "1.7 GB";
+
+        // Replace "None" with the maintainer's name or nickname (e.g., "magic4n")
+        const Maintainer = "BootFox";
+
+
+        // ============================================================================
+        // REPLACE FILE CHECKSUMS BELOW
+        // Put "None" to hide checksum verification rows.
+        // ============================================================================
+
+        // Replace "None" with your MD5 hash string
+        const MD5_Checksum = "None";
+
+        // Replace "None" with your SHA-256 hash string
+        const SHA256_Checksum = "sha256:fc862ce37a8ecfd3749ff73773310ef99a3537e5e6cb1551e64dbc47ae237fbe";
+
+
+        // ============================================================================
+        // REPLACE MIRROR LINKS BELOW
+        // Replace "None" with your full URL (e.g., "https://sourceforge.net/projects/...")
+        // Any mirror left as "None" or "" will be automatically hidden on the page.
+        // ============================================================================
+
+        // Replace "None" with your SourceForge mirror link
+        const SourceForge = "https://sourceforge.net/";
+
+        // Replace "None" with your Yandex Disk / Yandex Drive mirror link
+        const YandexDrive = "None";
+
+        // Replace "None" with your Google Drive mirror links (from 1 to 5)
+        const GoogleDrive_1 = "https://drive.google.com/file/d/149G-ouGhGoVXW-1QTDW6RkLQk-B8uqH6/view?usp=drivesdk";
+        const GoogleDrive_2 = "https://drive.google.com/file/d/1vAlxsZ6CIOjWcyBQdV7BwZBZZuS8ArKE/view?usp=drivesdk";
+        const GoogleDrive_3 = "None";
+        const GoogleDrive_4 = "None";
+        const GoogleDrive_5 = "None";
+
+        // Replace "None" with your GitHub Releases / Repository mirror link
+        const GitHub = "https://github.com/magic4n/BootFox/releases/tag/0ea8d866-charoite";
+
+        // Replace "None" with your Telegram channel or file post link
+        const Telegram = "https://t.me/";
+
+        // Replace "None" with your MEGA mirror link
+        const Mega = "None";
+
+        // Replace "None" with your MediaFire mirror link
+        const MediaFire = "None";
+
+        // Replace "None" with your Microsoft OneDrive mirror link
+        const OneDrive = "None";
+
+        // Replace "None" with your Direct Download URL
+        const DirectLink = "None";
+
+        // ============================================================================
+        // END OF CONFIGURATION — DO NOT EDIT BELOW UNLESS CUSTOMIZING TEMPLATE LOGIC
+        // ============================================================================
+    </script>
+
+    <script>
+        function isActiveValue(val) {
+            if (val === undefined || val === null) return false;
+            const cleaned = String(val).trim();
+            if (cleaned.length === 0) return false;
+            const lower = cleaned.toLowerCase();
+            return lower !== "none" && lower !== "null" && lower !== "undefined";
+        }
+
+        const SERVICE_ICONS = {
+            sourceforge: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke-opacity="0.35"/>
+                <path d="M12 6.5c-2.5 2.5-4 4.8-4 7a4 4 0 0 0 8 0c0-2.2-1.5-4.5-4-7z"/>
+                <path d="M12 16.5a1.5 1.5 0 0 1-1.5-1.5c0-.9.8-1.8 1.5-2.6.7.8 1.5 1.7 1.5 2.6A1.5 1.5 0 0 1 12 16.5z" fill="currentColor" stroke="none"/>
+            </svg>`,
+            yandex: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <ellipse cx="12" cy="12.5" rx="9" ry="5.5" transform="rotate(-18 12 12.5)"/>
+                <circle cx="12" cy="12.5" r="2.5" fill="currentColor" stroke="none"/>
+                <path d="M5.5 15.5a9.5 9.5 0 0 1 13-6"/>
+            </svg>`,
+            gdrive: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="9.2 3.5 14.8 3.5 21.5 15 15.9 15 9.2 3.5"/>
+                <polygon points="2.5 15 9.2 3.5 12 8.5 5.3 20 2.5 15"/>
+                <polygon points="5.3 20 18.7 20 21.5 15 8.1 15 5.3 20"/>
+            </svg>`,
+            github: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+                <path d="M9 18c-4.51 2-5-2-7-2"/>
+            </svg>`,
+            telegram: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 4.5L2.5 11.8c-.8.3-.8 1.4 0 1.7l4.8 1.6 1.9 5.6c.2.7 1.1.9 1.6.3l2.8-3 4.8 3.5c.6.4 1.5.1 1.7-.7l2.6-15c.2-.9-.5-1.6-1.2-1.3z"/>
+                <path d="M7.3 15.1L18 7.8"/>
+            </svg>`,
+            mega: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9.5"/>
+                <path d="M7.5 16V8.5L12 13l4.5-4.5V16"/>
+            </svg>`,
+            mediafire: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6.5 18.5h10a4.5 4.5 0 0 0 .7-8.95A6 6 0 0 0 5.6 8a4.5 4.5 0 0 0 .9 10.5z"/>
+                <path d="M11 11.5h4.5m-6.5 3h6.5"/>
+            </svg>`,
+            onedrive: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5.5 18.5h12.5a3.5 3.5 0 0 0 .5-6.96 5 5 0 0 0-9.6-1.5A4.2 4.2 0 0 0 5.5 18.5z"/>
+            </svg>`,
+            direct: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12m0 0l-4-4m4 4l4-4"/>
+                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+            </svg>`
+        };
+
+        const MIRROR_DEFINITIONS = [
+            {
+                id: "sourceforge",
+                name: "SourceForge",
+                subtitle: "Open Source Mirror Network",
+                url: SourceForge,
+                icon: SERVICE_ICONS.sourceforge,
+                color: "#FF6600",
+                glow: "rgba(255, 102, 0, 0.16)",
+                border: "rgba(255, 102, 0, 0.45)",
+                bgSubtle: "rgba(255, 102, 0, 0.1)"
+            },
+            {
+                id: "yandex",
+                name: "Yandex Drive",
+                subtitle: "Yandex Cloud Storage",
+                url: YandexDrive,
+                icon: SERVICE_ICONS.yandex,
+                color: "#FC3F1D",
+                glow: "rgba(252, 63, 29, 0.16)",
+                border: "rgba(252, 63, 29, 0.45)",
+                bgSubtle: "rgba(252, 63, 29, 0.1)"
+            },
+            {
+                id: "gdrive1",
+                name: "Google Drive (Mirror 1)",
+                subtitle: "Google Cloud Storage #1",
+                url: GoogleDrive_1,
+                icon: SERVICE_ICONS.gdrive,
+                color: "#34A853",
+                glow: "rgba(52, 168, 83, 0.16)",
+                border: "rgba(52, 168, 83, 0.45)",
+                bgSubtle: "rgba(52, 168, 83, 0.1)"
+            },
+            {
+                id: "gdrive2",
+                name: "Google Drive (Mirror 2)",
+                subtitle: "Google Cloud Storage #2",
+                url: GoogleDrive_2,
+                icon: SERVICE_ICONS.gdrive,
+                color: "#4285F4",
+                glow: "rgba(66, 133, 244, 0.16)",
+                border: "rgba(66, 133, 244, 0.45)",
+                bgSubtle: "rgba(66, 133, 244, 0.1)"
+            },
+            {
+                id: "gdrive3",
+                name: "Google Drive (Mirror 3)",
+                subtitle: "Google Cloud Storage #3",
+                url: GoogleDrive_3,
+                icon: SERVICE_ICONS.gdrive,
+                color: "#FBBC05",
+                glow: "rgba(251, 188, 5, 0.16)",
+                border: "rgba(251, 188, 5, 0.45)",
+                bgSubtle: "rgba(251, 188, 5, 0.1)"
+            },
+            {
+                id: "gdrive4",
+                name: "Google Drive (Mirror 4)",
+                subtitle: "Google Cloud Storage #4",
+                url: GoogleDrive_4,
+                icon: SERVICE_ICONS.gdrive,
+                color: "#34A853",
+                glow: "rgba(52, 168, 83, 0.16)",
+                border: "rgba(52, 168, 83, 0.45)",
+                bgSubtle: "rgba(52, 168, 83, 0.1)"
+            },
+            {
+                id: "gdrive5",
+                name: "Google Drive (Mirror 5)",
+                subtitle: "Google Cloud Storage #5",
+                url: GoogleDrive_5,
+                icon: SERVICE_ICONS.gdrive,
+                color: "#4285F4",
+                glow: "rgba(66, 133, 244, 0.16)",
+                border: "rgba(66, 133, 244, 0.45)",
+                bgSubtle: "rgba(66, 133, 244, 0.1)"
+            },
+            {
+                id: "github",
+                name: "GitHub",
+                subtitle: "Repository & Release Assets",
+                url: GitHub,
+                icon: SERVICE_ICONS.github,
+                color: "#A855F7",
+                glow: "rgba(168, 85, 247, 0.18)",
+                border: "rgba(168, 85, 247, 0.45)",
+                bgSubtle: "rgba(168, 85, 247, 0.1)"
+            },
+            {
+                id: "telegram",
+                name: "Telegram",
+                subtitle: "Telegram Cloud Channel / File",
+                url: Telegram,
+                icon: SERVICE_ICONS.telegram,
+                color: "#26A5E4",
+                glow: "rgba(38, 165, 228, 0.18)",
+                border: "rgba(38, 165, 228, 0.45)",
+                bgSubtle: "rgba(38, 165, 228, 0.1)"
+            },
+            {
+                id: "mega",
+                name: "MEGA",
+                subtitle: "Encrypted Cloud Storage",
+                url: Mega,
+                icon: SERVICE_ICONS.mega,
+                color: "#D9272E",
+                glow: "rgba(217, 39, 46, 0.18)",
+                border: "rgba(217, 39, 46, 0.45)",
+                bgSubtle: "rgba(217, 39, 46, 0.1)"
+            },
+            {
+                id: "mediafire",
+                name: "MediaFire",
+                subtitle: "Fast Cloud File Hosting",
+                url: MediaFire,
+                icon: SERVICE_ICONS.mediafire,
+                color: "#1299F3",
+                glow: "rgba(18, 153, 243, 0.18)",
+                border: "rgba(18, 153, 243, 0.45)",
+                bgSubtle: "rgba(18, 153, 243, 0.1)"
+            },
+            {
+                id: "onedrive",
+                name: "OneDrive",
+                subtitle: "Microsoft Cloud Mirror",
+                url: OneDrive,
+                icon: SERVICE_ICONS.onedrive,
+                color: "#0078D4",
+                glow: "rgba(0, 120, 212, 0.18)",
+                border: "rgba(0, 120, 212, 0.45)",
+                bgSubtle: "rgba(0, 120, 212, 0.1)"
+            },
+            {
+                id: "direct",
+                name: "Direct Download",
+                subtitle: "Direct HTTP/HTTPS Server Link",
+                url: DirectLink,
+                icon: SERVICE_ICONS.direct,
+                color: "#FFFFFF",
+                glow: "rgba(255, 255, 255, 0.18)",
+                border: "rgba(255, 255, 255, 0.5)",
+                bgSubtle: "rgba(255, 255, 255, 0.12)"
+            }
+        ];
+
+        let toastTimeout = null;
+        function showToast(message) {
+            const toast = document.getElementById("toastNotification");
+            const msgEl = document.getElementById("toastMessage");
+            msgEl.textContent = message;
+            toast.classList.remove("translate-y-12", "opacity-0");
+            toast.classList.add("translate-y-0", "opacity-100");
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove("translate-y-0", "opacity-100");
+                toast.classList.add("translate-y-12", "opacity-0");
+            }, 2400);
+        }
+
+        function copyTextToClipboard(text, label = "Link") {
+            const tempInput = document.createElement("textarea");
+            tempInput.value = text;
+            tempInput.style.position = "fixed";
+            tempInput.style.left = "-9999px";
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            try {
+                document.execCommand("copy");
+                showToast(`${label} copied to clipboard!`);
+            } catch (err) {
+                showToast("Failed to copy");
+            }
+            document.body.removeChild(tempInput);
+        }
+
+        function generateVisualQrSvg(urlString) {
+            // Deterministic visual QR matrix SVG generator + live QR image fallback
+            const encoded = encodeURIComponent(urlString);
+            const img = document.createElement("img");
+            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=${encoded}`;
+            img.alt = "QR Code";
+            img.className = "w-full h-full object-contain rounded";
+            img.onerror = function() {
+                // Offline deterministic SVG matrix fallback if no external image connection
+                const size = 21;
+                let hash = 2166136261;
+                for (let i = 0; i < urlString.length; i++) {
+                    hash ^= urlString.charCodeAt(i);
+                    hash = Math.imul(hash, 16777619);
+                }
+                let rects = "";
+                const isFinder = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= size - 7) || (r >= size - 7 && c < 7);
+                for (let r = 0; r < size; r++) {
+                    for (let c = 0; c < size; c++) {
+                        let fill = false;
+                        if (isFinder(r, c)) {
+                            const lr = r >= size - 7 ? r - (size - 7) : r;
+                            const lc = c >= size - 7 ? c - (size - 7) : c;
+                            if (lr === 0 || lr === 6 || lc === 0 || lc === 6 || (lr >= 2 && lr <= 4 && lc >= 2 && lc <= 4)) {
+                                fill = true;
+                            }
+                        } else {
+                            const seed = ((r * 31 + c * 17 + hash) ^ (urlString.charCodeAt((r + c) % urlString.length) * 13)) & 3;
+                            fill = seed === 0 || seed === 2;
+                        }
+                        if (fill) {
+                            rects += `<rect x="${c}" y="${r}" width="1" height="1" fill="#000"/>`;
+                        }
+                    }
+                }
+                const container = document.getElementById("qrCanvasContainer");
+                container.innerHTML = `<svg viewBox="0 0 ${size} ${size}" class="w-full h-full" shape-rendering="crispEdges">${rects}</svg>`;
+            };
+            const container = document.getElementById("qrCanvasContainer");
+            container.innerHTML = "";
+            container.appendChild(img);
+        }
+
+        let currentModalUrl = "";
+        function openQrModal(serviceName, url) {
+            currentModalUrl = url;
+            const modal = document.getElementById("qrModal");
+            const card = document.getElementById("qrModalCard");
+            document.getElementById("qrModalTitle").textContent = serviceName;
+            document.getElementById("qrModalUrl").textContent = url;
+            generateVisualQrSvg(url);
+
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+            requestAnimationFrame(() => {
+                modal.classList.remove("opacity-0");
+                modal.classList.add("opacity-100");
+                card.classList.remove("scale-95");
+                card.classList.add("scale-100");
+            });
+        }
+
+        function closeQrModal() {
+            const modal = document.getElementById("qrModal");
+            const card = document.getElementById("qrModalCard");
+            modal.classList.remove("opacity-100");
+            modal.classList.add("opacity-0");
+            card.classList.remove("scale-100");
+            card.classList.add("scale-95");
+            setTimeout(() => {
+                modal.classList.remove("flex");
+                modal.classList.add("hidden");
+            }, 200);
+        }
+
+        function renderPortal() {
+            const hasValidProjectName = isActiveValue(ProjectName);
+            const activeMirrors = MIRROR_DEFINITIONS.filter(m => isActiveValue(m.url));
+
+            const titleEl = document.getElementById("projectTitleDisplay");
+            const descEl = document.getElementById("projectDescriptionDisplay");
+            const metaContainer = document.getElementById("metadataContainer");
+            const checksumSection = document.getElementById("checksumSection");
+            const checksumList = document.getElementById("checksumList");
+            const mirrorsHeaderBar = document.getElementById("mirrorsHeaderBar");
+            const activeMirrorsCount = document.getElementById("activeMirrorsCount");
+            const mirrorsListContainer = document.getElementById("mirrorsListContainer");
+            const errorEmptyState = document.getElementById("errorEmptyState");
+            const errorStateMessage = document.getElementById("errorStateMessage");
+
+            // Update document title & main header
+            if (hasValidProjectName) {
+                const cleanName = String(ProjectName).trim();
+                document.title = `${cleanName} — Mirror everything.`;
+                titleEl.textContent = cleanName;
+            } else {
+                document.title = "Portal — Configuration Required";
+                titleEl.textContent = "Unnamed Project";
+            }
+
+            // Description
+            if (isActiveValue(Description)) {
+                descEl.textContent = String(Description).trim();
+                descEl.classList.remove("hidden");
+            } else {
+                descEl.classList.add("hidden");
+            }
+
+            // Metadata Badges
+            metaContainer.innerHTML = "";
+            const badges = [
+                { label: "Version", val: Version, icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />` },
+                { label: "Released", val: ReleaseDate, icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />` },
+                { label: "Size", val: FileSize, icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />` },
+                { label: "Maintained by", val: Maintainer, icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />` }
+            ];
+
+            badges.forEach(b => {
+                if (isActiveValue(b.val)) {
+                    const pill = document.createElement("div");
+                    pill.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 text-xs text-zinc-300";
+                    pill.innerHTML = `
+                        <svg class="w-3.5 h-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">${b.icon}</svg>
+                        <span class="text-zinc-500">${b.label}:</span>
+                        <span class="font-medium text-white font-mono-code">${String(b.val).trim()}</span>
+                    `;
+                    metaContainer.appendChild(pill);
+                }
+            });
+
+            // Checksums
+            checksumList.innerHTML = "";
+            const checksums = [
+                { type: "MD5", val: MD5_Checksum },
+                { type: "SHA-256", val: SHA256_Checksum }
+            ].filter(c => isActiveValue(c.val));
+
+            if (checksums.length > 0) {
+                checksumSection.classList.remove("hidden");
+                checksums.forEach(item => {
+                    const hashStr = String(item.val).trim();
+                    const row = document.createElement("div");
+                    row.className = "flex items-center justify-between gap-3 bg-black/50 hover:bg-black/70 border border-white/5 hover:border-white/15 rounded-xl px-3.5 py-2.5 cursor-pointer transition-all group";
+                    row.onclick = () => copyTextToClipboard(hashStr, `${item.type} Checksum`);
+                    row.innerHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="px-2 py-0.5 rounded bg-white/10 text-[10px] font-mono-code font-semibold text-zinc-200 shrink-0">${item.type}</span>
+                            <code class="text-xs font-mono-code text-zinc-400 group-hover:text-zinc-200 truncate transition-colors">${hashStr}</code>
+                        </div>
+                        <button type="button" class="text-zinc-500 group-hover:text-white transition-colors shrink-0" aria-label="Copy checksum">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                            </svg>
+                        </button>
+                    `;
+                    checksumList.appendChild(row);
+                });
+            } else {
+                checksumSection.classList.add("hidden");
+            }
+
+            // Validation Check: Must have a valid ProjectName AND at least 1 active mirror
+            if (!hasValidProjectName || activeMirrors.length === 0) {
+                mirrorsHeaderBar.classList.add("hidden");
+                mirrorsListContainer.innerHTML = "";
+                errorEmptyState.classList.remove("hidden");
+
+                if (!hasValidProjectName && activeMirrors.length === 0) {
+                    errorStateMessage.innerHTML = `Required fields are missing. Please open <code class="text-zinc-200 font-mono-code bg-white/10 px-1.5 py-0.5 rounded">index.html</code> and provide a valid <code class="text-zinc-200 font-mono-code bg-white/10 px-1.5 py-0.5 rounded">ProjectName</code> along with at least one mirror link.`;
+                } else if (!hasValidProjectName) {
+                    errorStateMessage.innerHTML = `Project name is not set. Please open <code class="text-zinc-200 font-mono-code bg-white/10 px-1.5 py-0.5 rounded">index.html</code> and set the <code class="text-zinc-200 font-mono-code bg-white/10 px-1.5 py-0.5 rounded">ProjectName</code> variable.`;
+                } else {
+                    errorStateMessage.innerHTML = `No mirror links are configured yet (all links are set to <code class="text-zinc-200 font-mono-code bg-white/10 px-1.5 py-0.5 rounded">"None"</code>). Please add at least one valid mirror URL inside <code class="text-zinc-200 font-mono-code bg-white/10 px-1.5 py-0.5 rounded">index.html</code>.`;
+                }
+                return;
+            }
+
+            errorEmptyState.classList.add("hidden");
+            mirrorsHeaderBar.classList.remove("hidden");
+            activeMirrorsCount.textContent = `${activeMirrors.length} ${activeMirrors.length === 1 ? "mirror" : "mirrors"}`;
+            mirrorsListContainer.innerHTML = "";
+
+            activeMirrors.forEach((mirror, idx) => {
+                const cleanUrl = String(mirror.url).trim();
+                const card = document.createElement("div");
+                card.className = "mirror-card rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-3 animate-fade-up";
+                card.style.animationDelay = `${0.2 + idx * 0.06}s`;
+                card.style.setProperty("--brand-color", mirror.color);
+                card.style.setProperty("--brand-glow", mirror.glow);
+                card.style.setProperty("--brand-border", mirror.border);
+                card.style.setProperty("--brand-bg-subtle", mirror.bgSubtle);
+
+                // Spotlight mouse tracking on each card
+                card.addEventListener("mousemove", (e) => {
+                    const rect = card.getBoundingClientRect();
+                    card.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
+                    card.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
+                });
+
+                card.innerHTML = `
+                    <a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" class="relative z-10 flex items-center gap-3.5 min-w-0 flex-grow group focus:outline-none">
+                        <div class="service-icon-wrap w-11 h-11 rounded-xl flex items-center justify-center shrink-0">
+                            ${mirror.icon}
+                        </div>
+                        <div class="min-w-0 flex-grow">
+                            <div class="flex items-center gap-2">
+                                <span class="font-semibold text-sm sm:text-base text-zinc-100 group-hover:text-white transition-colors truncate">${mirror.name}</span>
+                                <svg class="w-3.5 h-3.5 text-zinc-600 group-hover:text-zinc-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                                </svg>
+                            </div>
+                            <p class="text-xs text-zinc-500 font-mono-code truncate mt-0.5">${cleanUrl}</p>
+                        </div>
+                    </a>
+
+                    <div class="relative z-10 flex items-center gap-1.5 shrink-0">
+                        <div class="custom-tooltip">
+                            <button type="button" class="copy-btn w-9 h-9 rounded-xl action-icon-btn flex items-center justify-center" aria-label="Copy Mirror URL">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                                </svg>
+                            </button>
+                            <span class="tooltip-box font-mono-code">Copy URL</span>
+                        </div>
+
+                        <div class="custom-tooltip">
+                            <button type="button" class="qr-btn w-9 h-9 rounded-xl action-icon-btn flex items-center justify-center" aria-label="Show QR Code">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+                                </svg>
+                            </button>
+                            <span class="tooltip-box font-mono-code">QR Code</span>
+                        </div>
+                    </div>
+                `;
+
+                card.querySelector(".copy-btn").addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    copyTextToClipboard(cleanUrl, mirror.name);
+                });
+
+                card.querySelector(".qr-btn").addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    openQrModal(mirror.name, cleanUrl);
+                });
+
+                mirrorsListContainer.appendChild(card);
+            });
+        }
+
+        function initStarfield() {
+            const canvas = document.getElementById("starfieldCanvas");
+            const ctx = canvas.getContext("2d");
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            const starsCount = 55;
+            const stars = Array.from({ length: starsCount }, () => ({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 1.3 + 0.3,
+                alpha: Math.random() * 0.6 + 0.1,
+                speedY: -(Math.random() * 0.18 + 0.04),
+                twinkleSpeed: Math.random() * 0.015 + 0.005
+            }));
+
+            window.addEventListener("resize", () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            function animateStars() {
+                ctx.clearRect(0, 0, width, height);
+                for (const s of stars) {
+                    s.y += s.speedY;
+                    s.alpha += s.twinkleSpeed;
+                    if (s.alpha > 0.75 || s.alpha < 0.1) s.twinkleSpeed = -s.twinkleSpeed;
+                    if (s.y < 0) {
+                        s.y = height;
+                        s.x = Math.random() * width;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.05, Math.min(0.8, s.alpha))})`;
+                    ctx.fill();
+                }
+                requestAnimationFrame(animateStars);
+            }
+            animateStars();
+        }
+
+        window.addEventListener("DOMContentLoaded", () => {
+            renderPortal();
+            initStarfield();
+
+            document.getElementById("closeQrModalBtn").addEventListener("click", closeQrModal);
+            document.getElementById("qrModal").addEventListener("click", (e) => {
+                if (e.target.id === "qrModal") closeQrModal();
+            });
+            document.getElementById("qrModalCopyBtn").addEventListener("click", () => {
+                if (currentModalUrl) copyTextToClipboard(currentModalUrl, "Mirror link");
+            });
+            window.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") closeQrModal();
+            });
+        });
+    </script>
+</body>
+</html>
