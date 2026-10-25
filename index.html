@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lunaPortal — Mirror everything.</title>
+    <meta name="description" content="One personal portal for every open-source project — collect your mirrors in one place and get a single, clean link.">
+    <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #040405;
+            --glass-bg: rgba(18, 18, 21, 0.68);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-hover: rgba(255, 255, 255, 0.22);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: #f4f4f5;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        ::selection {
+            background: rgba(255, 255, 255, 0.92);
+            color: #000000;
+        }
+
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Ambient Monochrome Lunar Lighting */
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 50% -8%, rgba(255, 255, 255, 0.11), transparent 52%),
+                radial-gradient(circle at 85% 25%, rgba(161, 161, 170, 0.05), transparent 45%),
+                radial-gradient(circle at 15% 70%, rgba(113, 113, 122, 0.05), transparent 50%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-size: 44px 44px;
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            mask-image: radial-gradient(circle at 50% 35%, black 25%, transparent 85%);
+            -webkit-mask-image: radial-gradient(circle at 50% 35%, black 25%, transparent 85%);
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+        }
+
+        .spotlight-card {
+            position: relative;
+            background: rgba(16, 16, 19, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+        }
+
+        .spotlight-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(
+                550px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                rgba(255, 255, 255, 0.09),
+                transparent 45%
+            );
+            opacity: 0;
+            transition: opacity 0.35s ease;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .spotlight-card:hover::before {
+            opacity: 1;
+        }
+
+        .spotlight-card:hover {
+            border-color: rgba(255, 255, 255, 0.22);
+            transform: translateY(-2px);
+            box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.8), 0 0 25px -8px rgba(255, 255, 255, 0.07);
+        }
+
+        /* Interactive Demo Mirror Cards with Brand Hover Accents */
+        .demo-mirror-row {
+            position: relative;
+            background: rgba(22, 22, 26, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .demo-mirror-row:hover {
+            transform: translateX(3px);
+            border-color: var(--brand-border, rgba(255, 255, 255, 0.35));
+            background: rgba(28, 28, 34, 0.88);
+            box-shadow: 0 8px 25px -6px var(--brand-glow, rgba(255,255,255,0.1));
+        }
+
+        .demo-mirror-row .demo-icon {
+            color: #a1a1aa;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.28s ease;
+        }
+
+        .demo-mirror-row:hover .demo-icon {
+            color: var(--brand-color, #ffffff);
+            border-color: var(--brand-border, rgba(255, 255, 255, 0.35));
+            background: var(--brand-bg, rgba(255, 255, 255, 0.08));
+            box-shadow: 0 0 16px var(--brand-glow, rgba(255,255,255,0.15));
+        }
+
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .animate-float {
+            animation: floatSlow 6s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.55; transform: scale(1); }
+            50% { opacity: 0.9; transform: scale(1.04); }
+        }
+
+        .animate-glow {
+            animation: pulseGlow 5s ease-in-out infinite;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #040405;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Ambient Backgrounds -->
+    <div class="ambient-bg"></div>
+    <div class="grid-overlay"></div>
+    <canvas id="starfieldCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-60"></canvas>
+
+    <!-- Sticky Glass Navigation -->
+    <header class="sticky top-0 z-40 border-b border-white/[0.07] bg-black/50 backdrop-blur-xl">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+            <!-- Brand Logo + Name -->
+            <a href="#" class="flex items-center gap-3 group focus:outline-none">
+                <div class="w-9 h-9 rounded-xl overflow-hidden border border-white/15 shadow-[0_0_20px_rgba(255,255,255,0.08)] group-hover:border-white/40 transition-all">
+                    <!-- Inline SVG Icon identical to assets/icon.svg -->
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="w-full h-full">
+                        <defs>
+                            <radialGradient id="navBgGrad" cx="50%" cy="35%" r="75%">
+                                <stop offset="0%" stop-color="#1c1c21" />
+                                <stop offset="100%" stop-color="#050507" />
+                            </radialGradient>
+                            <linearGradient id="navLunaGrad" x1="15%" y1="10%" x2="85%" y2="90%">
+                                <stop offset="0%" stop-color="#ffffff" />
+                                <stop offset="100%" stop-color="#71717a" />
+                            </linearGradient>
+                            <linearGradient id="navMirrorGrad" x1="85%" y1="90%" x2="15%" y2="10%">
+                                <stop offset="0%" stop-color="#e4e4e7" stop-opacity="0.8" />
+                                <stop offset="100%" stop-color="#27272a" stop-opacity="0.1" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="512" height="512" fill="url(#navBgGrad)" />
+                        <g transform="rotate(-32 256 256)">
+                            <ellipse cx="256" cy="256" rx="190" ry="70" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="10" />
+                        </g>
+                        <path d="M 210 132 A 126 126 0 1 0 380 302 A 104 104 0 1 1 210 132 Z" fill="url(#navLunaGrad)" />
+                        <path d="M 302 380 A 126 126 0 1 0 132 210 A 104 104 0 1 1 302 380 Z" fill="url(#navMirrorGrad)" />
+                        <path d="M 256 206 C 256 240 256 240 222 256 C 256 272 256 272 256 306 C 256 272 256 272 290 256 C 256 240 256 240 256 206 Z" fill="#ffffff" />
+                    </svg>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold tracking-tight text-white text-base">lunaPortal</span>
+                    <span class="hidden sm:inline-block text-[10px] font-mono-code uppercase px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10 text-zinc-400">GPLv3</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-6 text-xs font-medium text-zinc-400">
+                <a href="#how-it-works" class="hover:text-white transition-colors">How it works</a>
+                <a href="#submit" class="hover:text-white transition-colors">Submit Project</a>
+                <a href="#template-spec" class="hover:text-white transition-colors">Template Variables</a>
+                <a href="#requirements" class="hover:text-white transition-colors">Requirements</a>
+                <a href="#repository" class="hover:text-white transition-colors">Repository</a>
+            </nav>
+
+            <!-- Right CTA Actions -->
+            <div class="flex items-center gap-2.5">
+                <a href="TEMPLATES/request.html" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-xs font-medium text-zinc-200 transition-all">
+                    <svg class="w-3.5 h-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    <span>request.html</span>
+                </a>
+                <a href="https://github.com/magic4n/Portal" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-semibold transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                    </svg>
+                    <span>GitHub</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="relative z-10 flex-grow">
+
+        <!-- HERO SECTION -->
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-14 pb-20 lg:pt-20 lg:pb-28">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-10 items-center">
+
+                <!-- Left Column: Hero Copy & Personal Link Previewer -->
+                <div class="lg:col-span-7 text-center lg:text-left">
+                    
+                    <!-- Status Badges -->
+                    <div class="inline-flex flex-wrap items-center justify-center lg:justify-start gap-2 mb-6">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-panel text-xs font-mono-code text-zinc-300">
+                            <span class="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_#fff]"></span>
+                            <span>Open Source Only</span>
+                        </div>
+                        <a href="https://github.com/magic4n/Portal/pulls" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-mono-code text-zinc-400 hover:text-white transition-all">
+                            <span>PRs Welcome</span>
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                            </svg>
+                        </a>
+                        <a href="LICENSE" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-mono-code text-zinc-400 hover:text-white transition-all">
+                            <span>License: GPLv3</span>
+                        </a>
+                    </div>
+
+                    <!-- Centerpiece Icon + Title Lockup -->
+                    <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-5 mb-6">
+                        <div class="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 animate-float">
+                            <div class="absolute -inset-2 rounded-3xl bg-white/10 blur-xl animate-glow pointer-events-none"></div>
+                            <!-- Master Monochrome SVG Artwork -->
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="relative w-full h-full rounded-[22px] shadow-2xl border border-white/15">
+                                <defs>
+                                    <radialGradient id="heroBgGrad" cx="50%" cy="35%" r="75%">
+                                        <stop offset="0%" stop-color="#1c1c21" />
+                                        <stop offset="55%" stop-color="#0b0b0e" />
+                                        <stop offset="100%" stop-color="#030304" />
+                                    </radialGradient>
+                                    <linearGradient id="heroLunaGrad" x1="15%" y1="10%" x2="85%" y2="90%">
+                                        <stop offset="0%" stop-color="#ffffff" />
+                                        <stop offset="50%" stop-color="#d4d4d8" />
+                                        <stop offset="100%" stop-color="#52525b" />
+                                    </linearGradient>
+                                    <linearGradient id="heroMirrorGrad" x1="85%" y1="90%" x2="15%" y2="10%">
+                                        <stop offset="0%" stop-color="#e4e4e7" stop-opacity="0.85" />
+                                        <stop offset="55%" stop-color="#71717a" stop-opacity="0.4" />
+                                        <stop offset="100%" stop-color="#27272a" stop-opacity="0.05" />
+                                    </linearGradient>
+                                    <linearGradient id="heroRingLinear" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7" />
+                                        <stop offset="50%" stop-color="#71717a" stop-opacity="0.12" />
+                                        <stop offset="100%" stop-color="#ffffff" stop-opacity="0.45" />
+                                    </linearGradient>
+                                </defs>
+                                <rect width="512" height="512" rx="112" fill="url(#heroBgGrad)" />
+                                <circle cx="256" cy="256" r="168" fill="none" stroke="url(#heroRingLinear)" stroke-width="2" stroke-dasharray="6 10" opacity="0.5" />
+                                <line x1="86" y1="426" x2="426" y2="86" stroke="url(#heroRingLinear)" stroke-width="2" stroke-dasharray="4 6" opacity="0.4" />
+                                <g transform="rotate(-32 256 256)">
+                                    <ellipse cx="256" cy="256" rx="186" ry="68" fill="none" stroke="url(#heroRingLinear)" stroke-width="3" opacity="0.7" />
+                                    <circle cx="70" cy="256" r="7" fill="#ffffff" />
+                                    <circle cx="442" cy="256" r="6" fill="#a1a1aa" />
+                                </g>
+                                <path d="M 210 132 A 126 126 0 1 0 380 302 A 104 104 0 1 1 210 132 Z" fill="url(#heroLunaGrad)" />
+                                <path d="M 302 380 A 126 126 0 1 0 132 210 A 104 104 0 1 1 302 380 Z" fill="url(#heroMirrorGrad)" />
+                                <circle cx="256" cy="256" r="54" fill="#09090b" stroke="url(#heroRingLinear)" stroke-width="2.5" />
+                                <path d="M 256 212 C 256 242 256 242 226 256 C 256 270 256 270 256 300 C 256 270 256 270 286 256 C 256 242 256 242 256 212 Z" fill="#ffffff" />
+                            </svg>
+                        </div>
+
+                        <div>
+                            <div class="text-xs font-mono-code uppercase tracking-widest text-zinc-400 mb-1">lunaPortal • Community Index</div>
+                            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white via-zinc-100 to-zinc-500 leading-none">
+                                Mirror everything.
+                            </h1>
+                        </div>
+                    </div>
+
+                    <p class="text-base sm:text-lg text-zinc-400 leading-relaxed max-w-2xl mx-auto lg:mx-0 mb-8">
+                        One personal portal for every open-source project. If your release lives across SourceForge, Google Drive, GitHub, Yandex, MEGA, or Telegram — stop pasting five links into every post. Submit once and get a single, permanent link.
+                    </p>
+
+                    <!-- Interactive Personal URL Preview Generator -->
+                    <div class="glass-panel rounded-2xl p-4 sm:p-5 mb-8 max-w-xl mx-auto lg:mx-0 text-left">
+                        <div class="flex items-center justify-between text-xs font-mono-code text-zinc-400 mb-2.5">
+                            <span>PREVIEW YOUR PERSONAL PORTAL LINK</span>
+                            <span class="text-zinc-500">Live URL format</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                            <div class="flex items-center bg-black/70 border border-white/10 focus-within:border-white/30 rounded-xl px-3.5 py-2.5 flex-grow font-mono-code text-xs sm:text-sm overflow-x-auto transition-colors">
+                                <span class="text-zinc-500 shrink-0 select-none">https://portal.lunaoss.tech/cloud/</span>
+                                <input id="usernamePreviewInput" type="text" value="magic4n" placeholder="your-username" maxlength="39"
+                                    class="bg-transparent text-white font-semibold focus:outline-none w-full min-w-[90px]"
+                                    aria-label="Your GitHub username" />
+                            </div>
+                            <button id="copyPreviewUrlBtn" type="button" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-mono-code font-medium text-white shrink-0 transition-all active:scale-95">
+                                Copy URL
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Primary Action Buttons -->
+                    <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3.5">
+                        <a href="#submit" class="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-all shadow-[0_0_30px_rgba(255,255,255,0.22)]">
+                            <span>Submit Your Project</span>
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                            </svg>
+                        </a>
+                        <a href="TEMPLATES/request.html" download="request.html" class="inline-flex items-center gap-2.5 px-5 py-3.5 rounded-2xl glass-panel hover:border-white/30 text-sm font-medium text-zinc-200 hover:text-white transition-all">
+                            <svg class="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                            <span>Download Template</span>
+                        </a>
+                        <a href="assets/icon.svg" download="lunaPortal-icon.svg" class="inline-flex items-center gap-2 px-4 py-3.5 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-xs font-mono-code text-zinc-400 hover:text-zinc-200 transition-all">
+                            <span>icon.svg</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Column: Interactive Live Mockup of a Generated Portal Page -->
+                <div class="lg:col-span-5">
+                    <div class="glass-panel rounded-3xl p-5 sm:p-6 border border-white/15 relative overflow-hidden">
+                        <!-- Browser Window Top Bar -->
+                        <div class="flex items-center justify-between pb-4 mb-5 border-b border-white/10">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-zinc-700"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-zinc-600"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-zinc-500"></span>
+                            </div>
+                            <div class="px-3 py-1 rounded-lg bg-black/60 border border-white/10 text-[11px] font-mono-code text-zinc-400 truncate max-w-[230px]">
+                                portal.lunaoss.tech/cloud/<span id="mockupUrlUser" class="text-white">magic4n</span>
+                            </div>
+                            <span class="text-[10px] font-mono-code uppercase px-2 py-0.5 rounded bg-white/10 text-zinc-300">Live Preview</span>
+                        </div>
+
+                        <!-- Simulated Portal Header -->
+                        <div class="text-center mb-5">
+                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono-code text-zinc-400 mb-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                <span>lunaPortal • Mirror everything.</span>
+                            </div>
+                            <h3 class="text-2xl font-bold text-white tracking-tight">lunaOS Kernel</h3>
+                            <p class="text-xs text-zinc-400 mt-1">Minimalist open-source microkernel distribution with verified reproducible builds.</p>
+                            <div class="flex flex-wrap items-center justify-center gap-1.5 mt-3">
+                                <span class="px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/10 text-[11px] font-mono-code text-zinc-300">v2.4.0-lts</span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/10 text-[11px] font-mono-code text-zinc-300">1.84 GB</span>
+                                <span class="px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/10 text-[11px] font-mono-code text-zinc-300">by <strong id="mockupMaintainer" class="text-white">magic4n</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Simulated SHA-256 Checksum Bar -->
+                        <div onclick="copyDemoText('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'SHA-256 Checksum')"
+                             class="bg-black/50 hover:bg-black/75 border border-white/10 rounded-xl p-2.5 mb-4 flex items-center justify-between gap-2 cursor-pointer transition-all group">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] font-mono-code text-zinc-200 font-semibold">SHA-256</span>
+                                <code class="text-[11px] font-mono-code text-zinc-400 group-hover:text-zinc-200 truncate">e3b0c44298fc1c149afbf4c8996fb924...b855</code>
+                            </div>
+                            <span class="text-[10px] font-mono-code text-zinc-500 group-hover:text-white shrink-0">Copy</span>
+                        </div>
+
+                        <!-- Simulated Mirror Cards -->
+                        <div class="space-y-2.5">
+                            <!-- SourceForge -->
+                            <div class="demo-mirror-row rounded-xl p-3 flex items-center justify-between gap-3"
+                                 style="--brand-color: #FF6600; --brand-border: rgba(255,102,0,0.45); --brand-glow: rgba(255,102,0,0.16); --brand-bg: rgba(255,102,0,0.1);">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="demo-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 6.5c-2.5 2.5-4 4.8-4 7a4 4 0 0 0 8 0c0-2.2-1.5-4.5-4-7z"/></svg>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-semibold text-white">SourceForge</div>
+                                        <div class="text-[11px] font-mono-code text-zinc-500 truncate">sourceforge.net/projects/lunaos</div>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-mono-code px-2 py-0.5 rounded bg-white/5 text-zinc-400">Mirror #1</span>
+                            </div>
+
+                            <!-- Google Drive -->
+                            <div class="demo-mirror-row rounded-xl p-3 flex items-center justify-between gap-3"
+                                 style="--brand-color: #34A853; --brand-border: rgba(52,168,83,0.45); --brand-glow: rgba(52,168,83,0.16); --brand-bg: rgba(52,168,83,0.1);">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="demo-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="9.2 3.5 14.8 3.5 21.5 15 15.9 15 9.2 3.5"/><polygon points="2.5 15 9.2 3.5 12 8.5 5.3 20 2.5 15"/><polygon points="5.3 20 18.7 20 21.5 15 8.1 15 5.3 20"/></svg>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-semibold text-white">Google Drive (Mirror 1)</div>
+                                        <div class="text-[11px] font-mono-code text-zinc-500 truncate">drive.google.com/drive/folders/...</div>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-mono-code px-2 py-0.5 rounded bg-white/5 text-zinc-400">Mirror #2</span>
+                            </div>
+
+                            <!-- GitHub Releases -->
+                            <div class="demo-mirror-row rounded-xl p-3 flex items-center justify-between gap-3"
+                                 style="--brand-color: #A855F7; --brand-border: rgba(168,85,247,0.45); --brand-glow: rgba(168,85,247,0.16); --brand-bg: rgba(168,85,247,0.1);">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="demo-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/></svg>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-semibold text-white">GitHub</div>
+                                        <div class="text-[11px] font-mono-code text-zinc-500 truncate">github.com/magic4n/Portal/releases</div>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-mono-code px-2 py-0.5 rounded bg-white/5 text-zinc-400">Mirror #3</span>
+                            </div>
+
+                            <!-- Telegram -->
+                            <div class="demo-mirror-row rounded-xl p-3 flex items-center justify-between gap-3"
+                                 style="--brand-color: #26A5E4; --brand-border: rgba(38,165,228,0.45); --brand-glow: rgba(38,165,228,0.16); --brand-bg: rgba(38,165,228,0.1);">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="demo-icon w-9 h-9 rounded-lg flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21.5 4.5L2.5 11.8c-.8.3-.8 1.4 0 1.7l4.8 1.6 1.9 5.6c.2.7 1.1.9 1.6.3l2.8-3 4.8 3.5c.6.4 1.5.1 1.7-.7l2.6-15c.2-.9-.5-1.6-1.2-1.3z"/></svg>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-semibold text-white">Telegram</div>
+                                        <div class="text-[11px] font-mono-code text-zinc-500 truncate">t.me/lunaos_releases/104</div>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-mono-code px-2 py-0.5 rounded bg-white/5 text-zinc-400">Mirror #4</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-zinc-500 font-mono-code">
+                            <span>Unfilled "None" mirrors auto-hidden</span>
+                            <span>mirrored by <strong class="text-zinc-300">Portal</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- HOW IT WORKS SECTION -->
+        <section id="how-it-works" class="max-w-6xl mx-auto px-4 sm:px-6 py-16 border-t border-white/[0.06]">
+            <div class="text-center max-w-2xl mx-auto mb-12">
+                <div class="text-xs font-mono-code uppercase tracking-widest text-zinc-400 mb-2">Workflow</div>
+                <h2 class="text-2xl sm:text-4xl font-bold text-white tracking-tight mb-3">How lunaPortal Works</h2>
+                <p class="text-sm sm:text-base text-zinc-400">
+                    You submit your mirrors once via Pull Request. We review the request, verify link availability, and publish your personal portal hub.
+                </p>
+            </div>
+
+            <!-- 5-Step Pipeline -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="spotlight-card rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-mono-code px-2.5 py-1 rounded-lg bg-white/10 text-white font-semibold">01</span>
+                            <svg class="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-semibold text-white mb-1.5">Download Template</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">Grab <code class="text-zinc-200 font-mono-code">TEMPLATES/request.html</code> from the repository.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/5 text-[11px] font-mono-code text-zinc-500">Single-file HTML</div>
+                </div>
+
+                <div class="spotlight-card rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-mono-code px-2.5 py-1 rounded-lg bg-white/10 text-white font-semibold">02</span>
+                            <svg class="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-semibold text-white mb-1.5">Fill Mirror Links</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">Set <code class="text-zinc-200 font-mono-code">ProjectName</code> and replace <code class="text-zinc-200 font-mono-code">"None"</code> with your active URLs.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/5 text-[11px] font-mono-code text-zinc-500">Auto-hides "None"</div>
+                </div>
+
+                <div class="spotlight-card rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-mono-code px-2.5 py-1 rounded-lg bg-white/10 text-white font-semibold">03</span>
+                            <svg class="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-semibold text-white mb-1.5">Open Pull Request</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">Save as <code class="text-zinc-200 font-mono-code">requests/&lt;username&gt;.html</code> and open a PR against <code class="text-zinc-200 font-mono-code">main</code>.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/5 text-[11px] font-mono-code text-zinc-500">GitHub PR flow</div>
+                </div>
+
+                <div class="spotlight-card rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-mono-code px-2.5 py-1 rounded-lg bg-white/10 text-white font-semibold">04</span>
+                            <svg class="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-semibold text-white mb-1.5">Review & Check</h3>
+                        <p class="text-xs text-zinc-400 leading-relaxed">We verify OSI-approved open-source licensing and public mirror reachability.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/5 text-[11px] font-mono-code text-zinc-500">Community curated</div>
+                </div>
+
+                <div class="spotlight-card rounded-2xl p-5 flex flex-col justify-between border-white/20">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-mono-code px-2.5 py-1 rounded-lg bg-white text-black font-bold">05</span>
+                            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-semibold text-white mb-1.5">Your Portal Link</h3>
+                        <p class="text-xs text-zinc-300 leading-relaxed">Once merged, your hub goes live at <code class="text-white font-mono-code">portal.lunaoss.tech/cloud/&lt;user&gt;</code>.</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-white/10 text-[11px] font-mono-code text-white">Always in sync</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SUBMIT & TEMPLATE VARIABLES SECTION -->
+        <section id="submit" class="max-w-6xl mx-auto px-4 sm:px-6 py-16 border-t border-white/[0.06]">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+                <!-- Left: Step-by-Step Bash Terminal -->
+                <div class="lg:col-span-6">
+                    <div class="text-xs font-mono-code uppercase tracking-widest text-zinc-400 mb-2">Quickstart</div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-3">Submit Your Project</h2>
+                    <p class="text-sm text-zinc-400 mb-6 leading-relaxed">
+                        Fork the repository, copy <code class="text-zinc-200 font-mono-code bg-white/5 px-1.5 py-0.5 rounded">TEMPLATES/request.html</code> to <code class="text-zinc-200 font-mono-code bg-white/5 px-1.5 py-0.5 rounded">requests/&lt;your-username&gt;.html</code>, fill in your variables, and open a Pull Request.
+                    </p>
+
+                    <div class="glass-panel rounded-2xl overflow-hidden border border-white/15">
+                        <div class="bg-black/60 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-zinc-600"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-zinc-600"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-zinc-600"></span>
+                                <span class="text-xs font-mono-code text-zinc-400 ml-2">bash — submit-portal.sh</span>
+                            </div>
+                            <button id="copyBashBtn" type="button" class="text-xs font-mono-code px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-zinc-200 transition-colors">
+                                Copy Commands
+                            </button>
+                        </div>
+                        <pre id="bashCommandsBlock" class="p-4 sm:p-5 text-xs font-mono-code text-zinc-300 overflow-x-auto leading-relaxed select-all"><span class="text-zinc-500"># 1. Fork the repository on GitHub, then clone:</span>
+git clone https://github.com/&lt;your-username&gt;/Portal.git
+cd Portal
+
+<span class="text-zinc-500"># 2. Create a request branch</span>
+git checkout -b request/&lt;your-username&gt;
+
+<span class="text-zinc-500"># 3. Copy the template and fill in your mirrors</span>
+cp TEMPLATES/request.html requests/&lt;your-username&gt;.html
+$EDITOR requests/&lt;your-username&gt;.html
+
+<span class="text-zinc-500"># 4. Commit and push</span>
+git add requests/&lt;your-username&gt;.html
+git commit -m "request: add &lt;project-name&gt;"
+git push origin request/&lt;your-username&gt;</pre>
+                    </div>
+                </div>
+
+                <!-- Right: Inside TEMPLATES/request.html Configuration -->
+                <div id="template-spec" class="lg:col-span-6">
+                    <div class="text-xs font-mono-code uppercase tracking-widest text-zinc-400 mb-2">Zero-Database Config</div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-3">Inside the HTML Template</h2>
+                    <p class="text-sm text-zinc-400 mb-6 leading-relaxed">
+                        No build tools or external databases required. Open <code class="text-zinc-200 font-mono-code bg-white/5 px-1.5 py-0.5 rounded">TEMPLATES/request.html</code> and edit the JavaScript constants at the top of the file:
+                    </p>
+
+                    <div class="glass-panel rounded-2xl overflow-hidden border border-white/15">
+                        <div class="bg-black/60 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                            <span class="text-xs font-mono-code text-zinc-400">TEMPLATES/request.html (Configuration Block)</span>
+                            <span class="text-[11px] font-mono-code text-zinc-500">"None" = Auto-Hidden</span>
+                        </div>
+                        <pre class="p-4 sm:p-5 text-xs font-mono-code text-zinc-300 overflow-x-auto leading-relaxed"><span class="text-zinc-500">// Project Metadata</span>
+<span class="text-zinc-400">const</span> ProjectName = <span class="text-white">"Portal"</span>;
+<span class="text-zinc-400">const</span> Description = <span class="text-white">"Short description of your open-source release."</span>;
+<span class="text-zinc-400">const</span> Version     = <span class="text-white">"v1.0.0"</span>;
+<span class="text-zinc-400">const</span> ReleaseDate = <span class="text-zinc-500">"None"</span>;
+<span class="text-zinc-400">const</span> FileSize    = <span class="text-zinc-500">"None"</span>;
+<span class="text-zinc-400">const</span> Maintainer  = <span class="text-white">"magic4n"</span>;
+
+<span class="text-zinc-500">// Optional Integrity Checksums</span>
+<span class="text-zinc-400">const</span> MD5_Checksum    = <span class="text-zinc-500">"None"</span>;
+<span class="text-zinc-400">const</span> SHA256_Checksum = <span class="text-zinc-500">"None"</span>;
+
+<span class="text-zinc-500">// Mirror Links (SourceForge, Yandex, Google Drive 1-5, GitHub, Telegram, etc.)</span>
+<span class="text-zinc-400">const</span> SourceForge   = <span class="text-white">"https://sourceforge.net/projects/..."</span>;
+<span class="text-zinc-400">const</span> YandexDrive   = <span class="text-zinc-500">"None"</span>;
+<span class="text-zinc-400">const</span> GoogleDrive_1 = <span class="text-white">"https://drive.google.com/..."</span>;
+<span class="text-zinc-400">const</span> GoogleDrive_2 = <span class="text-zinc-500">"None"</span>; <span class="text-zinc-500">// Up to GoogleDrive_5</span>
+<span class="text-zinc-400">const</span> GitHub        = <span class="text-white">"https://github.com/magic4n/Portal"</span>;
+<span class="text-zinc-400">const</span> Telegram      = <span class="text-white">"https://t.me/..."</span>;
+<span class="text-zinc-400">const</span> Mega          = <span class="text-zinc-500">"None"</span>;
+<span class="text-zinc-400">const</span> MediaFire     = <span class="text-zinc-500">"None"</span>;
+<span class="text-zinc-400">const</span> OneDrive      = <span class="text-zinc-500">"None"</span>;
+<span class="text-zinc-400">const</span> DirectLink    = <span class="text-zinc-500">"None"</span>;</pre>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- REQUIREMENTS & REPOSITORY LAYOUT SECTION -->
+        <section id="requirements" class="max-w-6xl mx-auto px-4 sm:px-6 py-16 border-t border-white/[0.06]">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                <!-- Requirements Checklist -->
+                <div class="lg:col-span-7">
+                    <div class="text-xs font-mono-code uppercase tracking-widest text-zinc-400 mb-2">Index Policy</div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-6">Submission Requirements</h2>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div class="spotlight-card rounded-2xl p-4">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <span class="w-5 h-5 rounded-full bg-white/10 text-white flex items-center justify-center text-xs font-bold">✓</span>
+                                <h3 class="text-sm font-semibold text-white">Open Source Only</h3>
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed">The project must be publicly available under an <a href="https://opensource.org/licenses" target="_blank" rel="noopener noreferrer" class="text-zinc-200 underline decoration-white/30">OSI-approved license</a>.</p>
+                        </div>
+
+                        <div class="spotlight-card rounded-2xl p-4">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <span class="w-5 h-5 rounded-full bg-white/10 text-white flex items-center justify-center text-xs font-bold">✓</span>
+                                <h3 class="text-sm font-semibold text-white">Publicly Reachable</h3>
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed">Every submitted mirror link must load cleanly without requiring a login wall.</p>
+                        </div>
+
+                        <div class="spotlight-card rounded-2xl p-4">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <span class="w-5 h-5 rounded-full bg-white/10 text-white flex items-center justify-center text-xs font-bold">✓</span>
+                                <h3 class="text-sm font-semibold text-white">Your Own Project</h3>
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed">You are the maintainer, or you have explicit permission to submit the project.</p>
+                        </div>
+
+                        <div class="spotlight-card rounded-2xl p-4">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <span class="w-5 h-5 rounded-full bg-white/10 text-white flex items-center justify-center text-xs font-bold">✓</span>
+                                <h3 class="text-sm font-semibold text-white">One Request Per Project</h3>
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed">All mirrors (up to 13 built-in slots) go inside the same single request HTML file.</p>
+                        </div>
+
+                        <div class="spotlight-card rounded-2xl p-4">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <span class="w-5 h-5 rounded-full bg-white/10 text-white flex items-center justify-center text-xs font-bold">✓</span>
+                                <h3 class="text-sm font-semibold text-white">Safe & Clean Content</h3>
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed">Strictly no malware, scams, NSFW, or illegal files permitted in the index.</p>
+                        </div>
+
+                        <div class="spotlight-card rounded-2xl p-4">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <span class="w-5 h-5 rounded-full bg-white/10 text-white flex items-center justify-center text-xs font-bold">✓</span>
+                                <h3 class="text-sm font-semibold text-white">Working Mirrors</h3>
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed">Mirrors are periodically re-checked; dead links are pruned to keep the hub reliable.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Repository Layout Tree -->
+                <div id="repository" class="lg:col-span-5">
+                    <div class="text-xs font-mono-code uppercase tracking-widest text-zinc-400 mb-2">Architecture</div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-6">Repository Layout</h2>
+
+                    <div class="glass-panel rounded-2xl p-5 border border-white/15">
+                        <pre class="text-xs font-mono-code text-zinc-300 leading-loose overflow-x-auto">.
+├── <span class="text-white font-semibold">index.html</span>                <span class="text-zinc-500"># Official lunaPortal homepage</span>
+├── assets/
+│   └── <span class="text-white font-semibold">icon.svg</span>              <span class="text-zinc-500"># Monochrome lunar portal icon</span>
+├── requests/                 <span class="text-zinc-500"># Submitted portal requests</span>
+│   └── &lt;username&gt;.html
+├── TEMPLATES/
+│   └── <span class="text-white font-semibold">request.html</span>          <span class="text-zinc-500"># The mirror hub template you fill in</span>
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── README.md
+└── LICENSE                   <span class="text-zinc-500"># GNU GPLv3</span></pre>
+
+                        <div class="mt-5 pt-4 border-t border-white/10 flex items-center justify-between gap-3">
+                            <div class="text-xs text-zinc-400">
+                                Ready to contribute or review open PRs?
+                            </div>
+                            <a href="https://github.com/magic4n/Portal" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-mono-code text-white shrink-0 transition-colors">
+                                View Repo →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 w-full py-8 px-4 border-t border-white/[0.07] bg-black/40 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+            <div class="flex items-center gap-2.5">
+                <span class="w-2 h-2 rounded-full bg-white/80"></span>
+                <span class="font-semibold text-zinc-300">lunaPortal</span>
+                <span>—</span>
+                <span class="font-mono-code text-zinc-400">Mirror everything.</span>
+                <span class="hidden sm:inline text-zinc-700">|</span>
+                <span class="hidden sm:inline text-zinc-500">Licensed under GPLv3</span>
+            </div>
+            <div>
+                mirrored by <a href="https://github.com/magic4n/Portal" target="_blank" rel="noopener noreferrer" class="text-zinc-200 font-medium hover:text-white underline decoration-white/30 hover:decoration-white underline-offset-4 transition-all">Portal</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 z-50 pointer-events-none transform translate-y-12 opacity-0 transition-all duration-300">
+        <div class="glass-panel px-4 py-3 rounded-xl border border-white/20 flex items-center gap-2.5 shadow-2xl">
+            <span class="w-2 h-2 rounded-full bg-white shadow-[0_0_8px_#fff]"></span>
+            <span id="toastMessage" class="text-xs font-medium text-white">Copied to clipboard</span>
+        </div>
+    </div>
+
+    <script>
+        // Toast helper
+        let toastTimer = null;
+        function showToast(msg) {
+            const toast = document.getElementById("toastNotification");
+            const text = document.getElementById("toastMessage");
+            text.textContent = msg;
+            toast.classList.remove("translate-y-12", "opacity-0");
+            toast.classList.add("translate-y-0", "opacity-100");
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove("translate-y-0", "opacity-100");
+                toast.classList.add("translate-y-12", "opacity-0");
+            }, 2400);
+        }
+
+        function copyDemoText(str, label = "Text") {
+            const temp = document.createElement("textarea");
+            temp.value = str;
+            temp.style.position = "fixed";
+            temp.style.left = "-9999px";
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+                document.execCommand("copy");
+                showToast(`${label} copied!`);
+            } catch (e) {
+                showToast("Copy failed");
+            }
+            document.body.removeChild(temp);
+        }
+
+        // Interactive personal URL preview sync
+        const usernameInput = document.getElementById("usernamePreviewInput");
+        const mockupUrlUser = document.getElementById("mockupUrlUser");
+        const mockupMaintainer = document.getElementById("mockupMaintainer");
+        const copyPreviewUrlBtn = document.getElementById("copyPreviewUrlBtn");
+
+        usernameInput.addEventListener("input", () => {
+            const clean = usernameInput.value.trim().replace(/[^a-zA-Z0-9-_]/g, "") || "your-username";
+            mockupUrlUser.textContent = clean;
+            mockupMaintainer.textContent = clean;
+        });
+
+        copyPreviewUrlBtn.addEventListener("click", () => {
+            const clean = usernameInput.value.trim().replace(/[^a-zA-Z0-9-_]/g, "") || "your-username";
+            copyDemoText(`https://portal.lunaoss.tech/cloud/${clean}`, "Personal portal URL");
+        });
+
+        // Copy bash commands
+        document.getElementById("copyBashBtn").addEventListener("click", () => {
+            const user = usernameInput.value.trim().replace(/[^a-zA-Z0-9-_]/g, "") || "<your-username>";
+            const commands = [
+                `git clone https://github.com/${user}/Portal.git`,
+                `cd Portal`,
+                `git checkout -b request/${user}`,
+                `cp TEMPLATES/request.html requests/${user}.html`,
+                `$EDITOR requests/${user}.html`,
+                `git add requests/${user}.html`,
+                `git commit -m "request: add <project-name>"`,
+                `git push origin request/${user}`
+            ].join("\n");
+            copyDemoText(commands, "Git commands");
+        });
+
+        // Card mouse spotlight effect
+        document.querySelectorAll(".spotlight-card").forEach(card => {
+            card.addEventListener("mousemove", (e) => {
+                const rect = card.getBoundingClientRect();
+                card.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
+                card.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
+            });
+        });
+
+        // Subtle starfield canvas animation
+        function initStarfield() {
+            const canvas = document.getElementById("starfieldCanvas");
+            const ctx = canvas.getContext("2d");
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            const stars = Array.from({ length: 60 }, () => ({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                r: Math.random() * 1.3 + 0.3,
+                alpha: Math.random() * 0.6 + 0.1,
+                speedY: -(Math.random() * 0.16 + 0.04),
+                twinkle: Math.random() * 0.014 + 0.004
+            }));
+
+            window.addEventListener("resize", () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            function render() {
+                ctx.clearRect(0, 0, width, height);
+                for (const s of stars) {
+                    s.y += s.speedY;
+                    s.alpha += s.twinkle;
+                    if (s.alpha > 0.75 || s.alpha < 0.1) s.twinkle = -s.twinkle;
+                    if (s.y < 0) {
+                        s.y = height;
+                        s.x = Math.random() * width;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.05, Math.min(0.8, s.alpha))})`;
+                    ctx.fill();
+                }
+                requestAnimationFrame(render);
+            }
+            render();
+        }
+
+        window.addEventListener("DOMContentLoaded", initStarfield);
+    </script>
+</body>
+</html>
