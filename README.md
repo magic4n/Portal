@@ -1,3 +1,21 @@
+<div align="center">
+  <img src="assets/icon.svg" width="128" alt="lunaPortal logo" />
+
+  <h1>lunaPortal</h1>
+
+  <p><strong>Mirror everything.</strong></p>
+
+  <p>One personal portal for every project — collect your mirrors in one place and get a single, clean link.</p>
+
+  <p>
+    <a href="LICENSE"><img alt="License: GPLv3" src="https://img.shields.io/badge/license-GPLv3-blue.svg"></a>
+    <a href="../../pulls"><img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
+    <img alt="Open source only" src="https://img.shields.io/badge/projects-open%20source%20only-7C5CFF.svg">
+  </p>
+</div>
+
+---
+
 ## What is lunaPortal?
 
 **lunaPortal** is a community-curated index of mirrors with a monochrome frosted-glass aesthetic. If your open-source release lives in more than one place — **SourceForge, Google Drive (1–5), GitHub, Yandex Drive, Telegram, MEGA, MediaFire, OneDrive, or a Direct Link** — you no longer need to paste five links into every post.
