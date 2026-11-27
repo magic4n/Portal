@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal — Mirror everything.</title>
+    <title>BootFox Portal — Mirror everything.</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -206,6 +206,374 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #3f3f46;
         }
+
+        /* BootFox Portal theme — built only with the dependencies already present above. */
+        :root {
+            --bg-primary: #fffdfa;
+            --glass-bg: rgba(255, 255, 255, 0.82);
+            --glass-border: rgba(234, 88, 12, 0.14);
+            --fox-orange: #ff4d00;
+            --fox-amber: #ffb800;
+            --fox-red: #e60023;
+            --ink: #172033;
+            --muted: #687386;
+        }
+
+        body {
+            background:
+                radial-gradient(ellipse at 50% -18%, rgba(255, 184, 0, .13), transparent 48%),
+                radial-gradient(ellipse at 92% 35%, rgba(230, 0, 35, .045), transparent 38%),
+                #fffdfa;
+            color: var(--ink);
+        }
+
+        ::selection { background: #ff4d00; color: #fff; }
+
+        .ambient-bg {
+            background:
+                radial-gradient(circle at 50% -10%, rgba(255, 184, 0, .13), transparent 55%),
+                radial-gradient(circle at 85% 30%, rgba(230, 0, 35, .045), transparent 45%),
+                radial-gradient(circle at 15% 80%, rgba(255, 77, 0, .045), transparent 50%);
+        }
+
+        .grid-overlay {
+            opacity: .45;
+            background-image:
+                linear-gradient(to right, rgba(255, 77, 0, .035) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 77, 0, .035) 1px, transparent 1px);
+            mask-image: radial-gradient(circle at 50% 40%, black 20%, transparent 82%);
+            -webkit-mask-image: radial-gradient(circle at 50% 40%, black 20%, transparent 82%);
+        }
+
+        #starfieldCanvas { opacity: .12 !important; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, .84);
+            border: 1px solid rgba(255, 104, 35, .17);
+            box-shadow: 0 16px 42px rgba(75, 38, 12, .055), inset 0 1px 0 rgba(255,255,255,.95);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        .mirror-card {
+            background: rgba(255,255,255,.86);
+            border: 1px solid rgba(234,88,12,.13);
+            box-shadow: 0 5px 18px rgba(75,38,12,.035);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        .mirror-card:hover {
+            background: #fff;
+            border-color: rgba(255, 77, 0, .38);
+            box-shadow: 0 14px 32px rgba(255, 77, 0, .085);
+        }
+
+        .mirror-card .service-icon-wrap {
+            background: linear-gradient(145deg, #fff8e9, #fff1ed);
+            border: 1px solid rgba(255, 104, 35, .17);
+            color: #e65316;
+        }
+
+        .mirror-card:hover .service-icon-wrap {
+            color: #fff;
+            border-color: transparent;
+            background: linear-gradient(135deg, #ffb800 0%, #ff4d00 52%, #e60023 100%);
+            box-shadow: 0 7px 18px rgba(255,77,0,.18);
+        }
+
+        .action-icon-btn {
+            background: rgba(255, 248, 239, .9);
+            border: 1px solid rgba(234,88,12,.16);
+            color: #8a5a45;
+        }
+        .action-icon-btn:hover {
+            background: #fff1e8;
+            border-color: rgba(255,77,0,.35);
+            color: #e64b12;
+        }
+
+        /* Re-map the existing utility classes used by the Portal markup. */
+        .text-white { color: #172033 !important; }
+        .text-zinc-100, .text-zinc-200, .text-zinc-300 { color: #354155 !important; }
+        .text-zinc-400 { color: #687386 !important; }
+        .text-zinc-500 { color: #8791a1 !important; }
+        .text-zinc-600 { color: #a1a9b5 !important; }
+
+        .bg-black\/60, .bg-black\/50 { background: rgba(255, 248, 239, .9) !important; }
+        .bg-white\/5 { background: rgba(255, 112, 48, .055) !important; }
+        .bg-white\/10 { background: rgba(255, 112, 48, .08) !important; }
+        .border-white\/5, .border-white\/10, .border-white\/15, .border-white\/20 {
+            border-color: rgba(234, 88, 12, .14) !important;
+        }
+        .bg-white { background-color: #fff !important; }
+        .text-black { color: #fff !important; }
+        #qrModalCopyBtn {
+            color: #fff !important;
+            background: linear-gradient(135deg, #ffb800 0%, #ff4d00 52%, #e60023 100%) !important;
+            box-shadow: 0 8px 20px rgba(255,77,0,.17);
+        }
+        #qrModalCopyBtn:hover { filter: brightness(1.04); }
+
+        #projectTitleDisplay {
+            background-image: linear-gradient(135deg, #172033 8%, #394255 58%, #ff4d00 112%) !important;
+        }
+
+        main > div:first-child > div > span:first-child {
+            background: linear-gradient(135deg, #ffb800, #ff4d00, #e60023) !important;
+            box-shadow: 0 0 10px rgba(255,77,0,.28) !important;
+        }
+        #metadataContainer > div {
+            color: #526075 !important;
+            background: rgba(255, 248, 239, .88) !important;
+            border-color: rgba(234, 88, 12, .15) !important;
+        }
+        .group:hover .group-hover\\:text-white { color: #e65316 !important; }
+        .group:hover .group-hover\\:text-zinc-300 { color: #e65316 !important; }
+
+        #mirrorsHeaderBar { color: #8a6470 !important; }
+        #activeMirrorsCount {
+            color: #e65316 !important;
+            background: rgba(255, 112, 48, .07) !important;
+            border-color: rgba(255, 112, 48, .18) !important;
+        }
+
+        footer {
+            background: rgba(255, 255, 255, .72) !important;
+            border-color: rgba(234, 88, 12, .12) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        footer .text-zinc-400 { color: #687386 !important; }
+        footer .text-zinc-200 { color: #394255 !important; }
+        footer a { color: #e65316 !important; }
+        footer a:hover { color: #c92d1d !important; }
+
+        #toastNotification .glass-panel {
+            background: rgba(255,255,255,.94);
+            border-color: rgba(255,77,0,.2) !important;
+            box-shadow: 0 12px 34px rgba(75,38,12,.12);
+        }
+        #toastMessage { color: #263247 !important; }
+
+        #qrModal {
+            background: rgba(35, 24, 20, .48) !important;
+        }
+        #qrModalCard {
+            background: rgba(255,255,255,.97) !important;
+            border-color: rgba(255,104,35,.2) !important;
+        }
+        #qrModalUrl {
+            color: #687386 !important;
+            background: #fff8f2 !important;
+            border-color: rgba(234,88,12,.14) !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: .01ms !important;
+            }
+        }
+
+    
+        /* BootFox Portal — refined dark theme with restrained ambient particles. */
+        :root {
+            color-scheme: dark;
+            --bg-primary: #09090b;
+            --glass-bg: rgba(20, 20, 23, .78);
+            --glass-border: rgba(255, 255, 255, .085);
+            --fox-orange: #ff6a2a;
+            --fox-amber: #ffc247;
+            --fox-red: #ef3340;
+            --ink: #f4f4f5;
+            --muted: #a1a1aa;
+        }
+
+        body {
+            background:
+                radial-gradient(ellipse at 50% -18%, rgba(255, 145, 45, .13), transparent 48%),
+                radial-gradient(ellipse at 94% 34%, rgba(239, 51, 64, .075), transparent 36%),
+                radial-gradient(ellipse at 8% 82%, rgba(255, 106, 42, .065), transparent 38%),
+                #09090b;
+            color: #f4f4f5;
+        }
+
+        ::selection { background: #ff6a2a; color: #fff; }
+
+        .ambient-bg {
+            background:
+                radial-gradient(circle at 50% -8%, rgba(255, 194, 71, .12), transparent 52%),
+                radial-gradient(circle at 84% 28%, rgba(239, 51, 64, .075), transparent 42%),
+                radial-gradient(circle at 12% 78%, rgba(255, 106, 42, .075), transparent 48%);
+        }
+
+        .ambient-bg::before,
+        .ambient-bg::after {
+            content: "";
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: #ffc247;
+            box-shadow:
+                8vw 14vh 0 0 rgba(255,194,71,.65),
+                19vw 62vh 0 0 rgba(255,106,42,.7),
+                31vw 28vh 0 0 rgba(255,255,255,.55),
+                47vw 78vh 0 0 rgba(255,194,71,.55),
+                63vw 18vh 0 0 rgba(255,106,42,.65),
+                76vw 56vh 0 0 rgba(255,255,255,.45),
+                91vw 32vh 0 0 rgba(255,194,71,.6),
+                84vw 86vh 0 0 rgba(255,106,42,.55);
+            opacity: .48;
+            animation: fox-drift 18s ease-in-out infinite alternate;
+        }
+        .ambient-bg::after {
+            width: 2px;
+            height: 2px;
+            transform: translate(4vw, 9vh);
+            opacity: .28;
+            animation-duration: 25s;
+            animation-direction: alternate-reverse;
+        }
+        @keyframes fox-drift {
+            from { translate: 0 0; }
+            to { translate: 0 -13px; }
+        }
+
+        .grid-overlay {
+            opacity: .62;
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, .027) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, .027) 1px, transparent 1px);
+            mask-image: radial-gradient(circle at 50% 40%, black 18%, transparent 84%);
+            -webkit-mask-image: radial-gradient(circle at 50% 40%, black 18%, transparent 84%);
+        }
+
+        #starfieldCanvas { opacity: .23 !important; }
+
+        .glass-panel {
+            background: rgba(20, 20, 23, .78);
+            border: 1px solid rgba(255, 255, 255, .09);
+            box-shadow: 0 18px 48px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255,255,255,.055);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .mirror-card {
+            background: linear-gradient(135deg, rgba(25,25,29,.88), rgba(16,16,19,.82));
+            border: 1px solid rgba(255,255,255,.075);
+            box-shadow: 0 7px 24px rgba(0,0,0,.2);
+        }
+        .mirror-card:hover {
+            background: linear-gradient(135deg, rgba(34,28,26,.96), rgba(20,19,21,.94));
+            border-color: rgba(255,106,42,.42);
+            box-shadow: 0 14px 36px rgba(0,0,0,.38), 0 0 24px rgba(255,106,42,.09);
+        }
+        .mirror-card .service-icon-wrap {
+            background: linear-gradient(145deg, rgba(255,194,71,.12), rgba(255,106,42,.10));
+            border: 1px solid rgba(255,145,45,.2);
+            color: #ff9a54;
+        }
+        .mirror-card:hover .service-icon-wrap {
+            color: #fff;
+            border-color: transparent;
+            background: linear-gradient(135deg, #ffc247 0%, #ff6a2a 55%, #ef3340 100%);
+            box-shadow: 0 7px 22px rgba(255,106,42,.2);
+        }
+
+        .action-icon-btn {
+            background: rgba(255,255,255,.045);
+            border: 1px solid rgba(255,255,255,.085);
+            color: #a1a1aa;
+        }
+        .action-icon-btn:hover {
+            background: rgba(255,106,42,.12);
+            border-color: rgba(255,106,42,.34);
+            color: #ffad78;
+        }
+
+        .text-white { color: #f4f4f5 !important; }
+        .text-zinc-100, .text-zinc-200, .text-zinc-300 { color: #d4d4d8 !important; }
+        .text-zinc-400 { color: #a1a1aa !important; }
+        .text-zinc-500 { color: #777780 !important; }
+        .text-zinc-600 { color: #62626b !important; }
+
+        .bg-black\/60, .bg-black\/50 { background: rgba(8,8,10,.72) !important; }
+        .bg-white\/5 { background: rgba(255,255,255,.045) !important; }
+        .bg-white\/10 { background: rgba(255,255,255,.075) !important; }
+        .border-white\/5, .border-white\/10, .border-white\/15, .border-white\/20 {
+            border-color: rgba(255,255,255,.09) !important;
+        }
+        .bg-white { background-color: #fff !important; }
+        .text-black { color: #09090b !important; }
+
+        #qrModalCopyBtn {
+            color: #fff !important;
+            background: linear-gradient(135deg, #ffc247 0%, #ff6a2a 54%, #ef3340 100%) !important;
+            box-shadow: 0 8px 24px rgba(255,106,42,.2);
+        }
+        #qrModalCopyBtn:hover { filter: brightness(1.08); }
+
+        #projectTitleDisplay {
+            background-image: linear-gradient(135deg, #fff 8%, #f4c6a7 58%, #ff6a2a 112%) !important;
+            filter: drop-shadow(0 8px 28px rgba(255,106,42,.08));
+        }
+
+        main > div:first-child > div > span:first-child {
+            background: linear-gradient(135deg, #ffc247, #ff6a2a, #ef3340) !important;
+            box-shadow: 0 0 12px rgba(255,106,42,.48) !important;
+        }
+        #metadataContainer > div {
+            color: #c2c2ca !important;
+            background: rgba(255,255,255,.045) !important;
+            border-color: rgba(255,255,255,.09) !important;
+        }
+        .group:hover .group-hover\\:text-white { color: #ffad78 !important; }
+        .group:hover .group-hover\\:text-zinc-300 { color: #ffad78 !important; }
+
+        #mirrorsHeaderBar { color: #a1a1aa !important; }
+        #activeMirrorsCount {
+            color: #ffad78 !important;
+            background: rgba(255,106,42,.09) !important;
+            border-color: rgba(255,106,42,.2) !important;
+        }
+
+        footer {
+            background: rgba(13,13,16,.72) !important;
+            border-color: rgba(255,255,255,.075) !important;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+        footer .text-zinc-400 { color: #a1a1aa !important; }
+        footer .text-zinc-200 { color: #d4d4d8 !important; }
+        footer a { color: #ff9a64 !important; }
+        footer a:hover { color: #ffc247 !important; }
+
+        #toastNotification .glass-panel {
+            background: rgba(24,24,27,.96);
+            border-color: rgba(255,106,42,.24) !important;
+            box-shadow: 0 12px 34px rgba(0,0,0,.42);
+        }
+        #toastMessage { color: #f4f4f5 !important; }
+
+        #qrModal { background: rgba(0,0,0,.72) !important; }
+        #qrModalCard {
+            background: rgba(20,20,23,.98) !important;
+            border-color: rgba(255,106,42,.2) !important;
+        }
+        #qrModalUrl {
+            color: #a1a1aa !important;
+            background: rgba(8,8,10,.78) !important;
+            border-color: rgba(255,255,255,.09) !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .ambient-bg::before, .ambient-bg::after { animation: none !important; }
+        }
+
     </style>
 </head>
 <body class="flex flex-col justify-between min-h-screen selection:bg-white selection:text-black">
@@ -221,7 +589,7 @@
         <div class="flex justify-center mb-6 animate-fade-up" style="animation-delay: 0.05s;">
             <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full glass-panel text-xs font-mono-code tracking-wider uppercase text-zinc-400">
                 <span class="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_#fff]"></span>
-                <span>lunaPortal</span>
+                <span>BootFox Portal</span>
                 <span class="text-zinc-600">•</span>
                 <span class="text-zinc-300">Mirror everything.</span>
             </div>
